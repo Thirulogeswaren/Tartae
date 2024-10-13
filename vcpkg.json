@@ -1,6 +1,6 @@
 {
   "dependencies": [
-    "sdl2", "fmt"
+    "sdl2", "sdl2-image","fmt"
   ],
   "builtin-baseline": "4e08971f3ddc13018ca858a692efe92d3b6b9fce"
 }

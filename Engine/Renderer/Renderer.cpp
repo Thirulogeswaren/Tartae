@@ -7,12 +7,12 @@
 
 using namespace Tartae;
 
-struct EngineSpec
+struct Renderer::EngineSpec
 {
 	SDL_Renderer* renderer;
-	SDL_Window*	window;
+	SDL_Window* window;
 	Uint16 state;
-} _context{};
+};
 
 void Renderer::RunTheLoop()
 {
@@ -21,6 +21,8 @@ void Renderer::RunTheLoop()
 		TARTAE_FATAL("{}", SDL_GetError());
 		return;
 	}
+
+	EngineSpec _context{};
 
 	_context.window = SDL_CreateWindow(
 		"Tartae Engine",
@@ -51,7 +53,7 @@ void Renderer::RunTheLoop()
 
 	TARTAE_INFO("SDL Initialized");
 
-	//this->EngineContext = &_context;
+	this->EngineContext = &_context;
 	Game GameContext;
 
 	GameContext.Start();

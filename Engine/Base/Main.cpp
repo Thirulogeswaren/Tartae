@@ -1,7 +1,9 @@
 #include <Renderer/Renderer.h>
 #include <Base/Logger.h>
 
-int main()
+#include "SDL2/SDL_main.h"
+
+int main(int argc, char* argv[])
 {
 	using Tartae::Renderer;
 
@@ -10,4 +12,6 @@ int main()
 	renderer.RunTheLoop();
 
 	TARTAE_INFO("SDL Context Destroyed");
+
+	return EXIT_SUCCESS;
 }
