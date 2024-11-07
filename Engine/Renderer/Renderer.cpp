@@ -5,7 +5,12 @@
 
 #include "SDL2/SDL.h"
 
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_sdlrenderer2.h"
+
 using namespace Tartae;
+
+#include "Editor.hpp"
 
 struct Renderer::EngineSpec
 {
@@ -18,13 +23,15 @@ void Renderer::RunTheLoop()
 {
 	if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
 	{
-		TARTAE_FATAL("{}", SDL_GetError());
+		TARTAE_FATAL("%s", SDL_GetError());
 		return;
 	}
 
 	EngineSpec _context{};
 
-	_context.window = SDL_CreateWindow(
+	auto& [renderer, window, engine_state] = _context;
+
+	window = SDL_CreateWindow(
 		"Tartae Engine",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
@@ -32,55 +39,84 @@ void Renderer::RunTheLoop()
 		SDL_WINDOW_RESIZABLE
 	);
 
-	if (!_context.window)
+	if (!window)
 	{
-		TARTAE_FATAL("{}", SDL_GetError());
+		TARTAE_FATAL("%s", SDL_GetError());
 		SDL_Quit();
 		return;
 	}
 
-	_context.renderer = SDL_CreateRenderer(_context.window, -1, SDL_RENDERER_PRESENTVSYNC);
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
 
-	if (!_context.renderer)
+	if (!renderer)
 	{
-		TARTAE_FATAL("{}", SDL_GetError());
-		SDL_DestroyWindow(_context.window);
+		TARTAE_FATAL("%s", SDL_GetError());
+		SDL_DestroyWindow(window);
 		SDL_Quit();
 		return;
 	}
-
-	_context.state = 1u;
 
 	TARTAE_INFO("SDL Initialized");
 
-	this->EngineContext = &_context;
-	Game GameContext;
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
 
-	GameContext.Start();
+	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	ImGui::GetIO().FontGlobalScale = 1.0f;
+
+
+	ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
+	ImGui_ImplSDLRenderer2_Init(renderer);
+	
+	ImGui::StyleColorsDark();
+
+	this->EngineContext = &_context;
+	
+	engine_state = 1u;
 
 	SDL_Event evnt{};
 
-	while (_context.state)
+	Editor::EditorClass editor_inst{};
+
+	while (engine_state)
 	{
 		while (SDL_PollEvent(&evnt))
 		{
+			ImGui_ImplSDL2_ProcessEvent(&evnt);
+
 			if (evnt.type == SDL_QUIT || evnt.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
 			{
-				TARTAE_TRACE("Context State set to 0");
-				_context.state = 0u;
+				TARTAE_TRACE("Context engine_state set to 0");
+				engine_state = 0u;
 			}
 		}
 
-		GameContext.Update();
+		ImGui_ImplSDLRenderer2_NewFrame();
+		ImGui_ImplSDL2_NewFrame();
+		ImGui::NewFrame();
 
-		SDL_RenderClear(_context.renderer);
+		ImGui::DockSpaceOverViewport(0u,
+			ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode
+		);
 
-		GameContext.Render();
-		SDL_RenderPresent(_context.renderer);
+		// Editor ImGui Calls
+		editor_inst.RenderImGui();
+
+		ImGui::Render();
+		SDL_RenderClear(renderer);
+
+		ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+		SDL_RenderPresent(renderer);
 	}
 
-	SDL_DestroyRenderer(_context.renderer);
-	SDL_DestroyWindow(_context.window);
+	ImGui_ImplSDLRenderer2_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+
+	ImGui::DestroyContext();
+
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
 
 	SDL_Quit();
 

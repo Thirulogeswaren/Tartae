@@ -6,6 +6,7 @@ add_library(TartaeEngine STATIC
 )
 
 target_include_directories(TartaeEngine PRIVATE ${PROJECT_SOURCE_DIR}/Engine)
+target_include_directories(TartaeEngine PRIVATE ${PROJECT_SOURCE_DIR}/Editor)
 
 target_compile_features(TartaeEngine PUBLIC cxx_std_20)
 
